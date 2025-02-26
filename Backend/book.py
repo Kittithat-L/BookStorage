@@ -4,15 +4,28 @@ from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from bson import ObjectId
 
+stored_password = "lnwza55oo7xdabxc"
+
 uri = "mongodb+srv://MongoDBTestKittithat:9Xc923j1nHEmRTGx@cluster0.ihapg.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
 app = Flask(__name__)
 
-CORS(app, resources={r"/books/*": {"origins": "https://opulent-space-barnacle-jj799j9vq5w9c474-5173.app.github.dev"}})
+CORS(app, resources={r"/*": {"origins": "https://opulent-space-barnacle-jj799j9vq5w9c474-5173.app.github.dev"}})
 
 client = MongoClient(uri, server_api=ServerApi('1'))
 db = client.BookStore
 books_collection = db.Books
+
+@app.route("/login", methods=['POST'])
+def login():
+    data = request.get_json()
+    if "password" not in data:
+        return jsonify({"error": "Password is required"}), 400
+    
+    if data["password"] == stored_password:
+        return jsonify({"message": "Login successful"}), 200
+    else:
+        return jsonify({"error": "Invalid credentials"}), 401
 
 @app.route("/books", methods=['POST'])
 def create_book():
@@ -69,9 +82,6 @@ def update_book(book_id):
         return jsonify(updated_book), 200
     else:
         return jsonify({"error": "Book not found"}), 404
-
-
-
 
 @app.route('/books/<book_id>', methods=['DELETE'])
 def delete_book(book_id):

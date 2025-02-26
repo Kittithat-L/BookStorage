@@ -1,24 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import './App.css';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import "./App.css";
 
 const App = () => {
   const [books, setBooks] = useState([]);
-  const [newBook, setNewBook] = useState({ title: '', author: '', image_url: '' });
+  const [newBook, setNewBook] = useState({ title: "", author: "", image_url: "" });
   const [editBook, setEditBook] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
-  const uri = 'https://opulent-space-barnacle-jj799j9vq5w9c474-5001.app.github.dev';
+  const [password, setPassword] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const uri = "https://opulent-space-barnacle-jj799j9vq5w9c474-5001.app.github.dev";
 
   useEffect(() => {
-    fetchBooks();
-  }, []);
+    if (isLoggedIn) fetchBooks();
+  }, [isLoggedIn]);
 
   const fetchBooks = async () => {
     try {
       const response = await axios.get(`${uri}/books`);
       setBooks(response.data.books);
     } catch (error) {
-      console.error('Error fetching books:', error);
+      console.error("Error fetching books:", error);
     }
   };
 
@@ -33,7 +35,7 @@ const App = () => {
 
   const handleCreateBook = async () => {
     if (!newBook.title || !newBook.author || !newBook.image_url) {
-      alert('Please fill out all fields before creating a new book!');
+      alert("Please fill out all fields before creating a new book!");
       return;
     }
     const bookData = {
@@ -44,10 +46,10 @@ const App = () => {
 
     try {
       const response = await axios.post(`${uri}/books`, bookData);
-      setBooks(prevBooks => [...prevBooks, response.data]);
-      setNewBook({ title: '', author: '', image_url: '' });
+      setBooks((prevBooks) => [...prevBooks, response.data]);
+      setNewBook({ title: "", author: "", image_url: "" });
     } catch (error) {
-      console.error('Error creating book:', error);
+      console.error("Error creating book:", error);
     }
   };
 
@@ -58,7 +60,7 @@ const App = () => {
 
   const handleUpdateBook = async () => {
     if (!editBook.title || !editBook.author || !editBook.image_url) {
-      alert('Please fill out all fields before submitting!');
+      alert("Please fill out all fields before submitting!");
       return;
     }
 
@@ -71,7 +73,7 @@ const App = () => {
       setShowPopup(false);
       setEditBook(null);
     } catch (error) {
-      console.error('Error updating book:', error);
+      console.error("Error updating book:", error);
     }
   };
 
@@ -81,7 +83,7 @@ const App = () => {
       const filteredBooks = books.filter((book) => book._id !== bookId);
       setBooks(filteredBooks);
     } catch (error) {
-      console.error('Error deleting book:', error);
+      console.error("Error deleting book:", error);
     }
   };
 
@@ -90,91 +92,115 @@ const App = () => {
     setShowPopup(false);
   };
 
+  const handleLogin = async () => {
+    try {
+      const response = await axios.post(`${uri}/login`, { password });
+      if (response.status === 200) {
+        setIsLoggedIn(true);
+      }
+    } catch (error) {
+      alert("Invalid password! Please try again.");
+    }
+  };
+
   return (
     <div className="chat-container">
-      <div className="header">
-        <h1>Book Chat</h1>
-      </div>
-      <div className="chat-box">
-        {books.map((book) => (
-          <div className="chat-item" key={book._id}>
-            <div className="chat-content">
-              <div className="chat-title">
-                <strong>{book.title}</strong> by {book.author}
-              </div>
-              <div className="chat-id">
-                ID: {book._id}
-              </div>
-              <div className="chat-image">
-                <img src={book.image_url} alt={book.title} width="50" />
-              </div>
-            </div>
-            <div className="chat-actions">
-              <button onClick={() => handleEditBook(book)}>Edit</button>
-              <button onClick={() => handleDeleteBook(book._id)}>Delete</button>
-            </div>
+      {!isLoggedIn ? (
+        <div className="login-container">
+          <h2>Login</h2>
+          <input
+            type="password"
+            placeholder="Enter Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <button onClick={handleLogin}>Login</button>
+        </div>
+      ) : (
+        <>
+          <div className="header">
+            <h1>Book Chat</h1>
           </div>
-        ))}
-      </div>
+          <div className="chat-box">
+            {books.map((book) => (
+              <div className="chat-item" key={book._id}>
+                <div className="chat-content">
+                  <div className="chat-title">
+                    <strong>{book.title}</strong> by {book.author}
+                  </div>
+                  <div className="chat-id">ID: {book._id}</div>
+                  <div className="chat-image">
+                    <img src={book.image_url} alt={book.title} width="50" />
+                  </div>
+                </div>
+                <div className="chat-actions">
+                  <button onClick={() => handleEditBook(book)}>Edit</button>
+                  <button onClick={() => handleDeleteBook(book._id)}>Delete</button>
+                </div>
+              </div>
+            ))}
+          </div>
 
-      {showPopup && (
-        <div className="popup">
-          <div className="popup-content">
-            <h2>Edit Book</h2>
+          {showPopup && (
+            <div className="popup">
+              <div className="popup-content">
+                <h2>Edit Book</h2>
+                <input
+                  type="text"
+                  name="title"
+                  placeholder="Title"
+                  value={editBook.title}
+                  onChange={handleInputChange}
+                />
+                <input
+                  type="text"
+                  name="author"
+                  placeholder="Author"
+                  value={editBook.author}
+                  onChange={handleInputChange}
+                />
+                <input
+                  type="text"
+                  name="image_url"
+                  placeholder="Image URL"
+                  value={editBook.image_url}
+                  onChange={handleInputChange}
+                />
+                <div className="popup-actions">
+                  <button onClick={handleClearEdit}>Clear</button>
+                  <button onClick={handleUpdateBook}>Submit</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="add-book">
+            <h2>Add New Book</h2>
             <input
               type="text"
               name="title"
               placeholder="Title"
-              value={editBook.title}
+              value={newBook.title}
               onChange={handleInputChange}
             />
             <input
               type="text"
               name="author"
               placeholder="Author"
-              value={editBook.author}
+              value={newBook.author}
               onChange={handleInputChange}
             />
             <input
               type="text"
               name="image_url"
               placeholder="Image URL"
-              value={editBook.image_url}
+              value={newBook.image_url}
               onChange={handleInputChange}
             />
-            <div className="popup-actions">
-              <button onClick={handleClearEdit}>Clear</button>
-              <button onClick={handleUpdateBook}>Submit</button>
-            </div>
+            <button onClick={handleCreateBook}>Create</button>
           </div>
-        </div>
+        </>
       )}
-
-      <div className="add-book">
-        <h2>Add New Book</h2>
-        <input
-          type="text"
-          name="title"
-          placeholder="Title"
-          value={newBook.title}
-          onChange={handleInputChange}
-        />
-        <input
-          type="text"
-          name="author"
-          placeholder="Author"
-          value={newBook.author}
-          onChange={handleInputChange}
-        />
-        <input
-          type="text"
-          name="image_url"
-          placeholder="Image URL"
-          value={newBook.image_url}
-          onChange={handleInputChange}
-        />
-        <button onClick={handleCreateBook}>Create</button>
-      </div>
     </div>
   );
 };
